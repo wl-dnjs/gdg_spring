@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb  # H2 데이터베이스
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true  # SQL 로그를 보여줌
+    properties:
+      hibernate:
+        format_sql: true
