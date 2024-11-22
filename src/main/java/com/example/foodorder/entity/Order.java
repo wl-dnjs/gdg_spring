@@ -9,35 +9,47 @@ public class Order {
     @Id // 기본키
     @GeneratedValue(strategy = GenerationType.IDENTITY) // DB에서 자동으로 아이디 생성
     private Long id;
-    private String foodName;
-    private int quantity;
-    private String option;
 
-    // 기본 생성자
+    @ManyToOne(optional = false) // 하나의 음식과 연결됨
+    @JoinColumn(name = "food_id", nullable = false) // 외래 키(food_id)로 연결
+    private Food food;
+
+    @ManyToOne(optional = false) // 하나의 사용자와 연결됨
+    @JoinColumn(name = "user_id", nullable = false) // 외래 키(user_id)로 연결
+    private User user;
+
+    private int quantity;
+
+    private String orderOption;
+
     public Order() {
     }
 
-    // 매개변수가 있는 생성자
-    public Order(String foodName, int quantity, String option) {
-        this.foodName = foodName;
+    public Order(Food food, User user, int quantity, String orderOption) {
+        this.food = food;
+        this.user = user;
         this.quantity = quantity;
-        this.option = option;
+        this.orderOption = orderOption;
     }
 
     public Long getId() {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public Food getFood() {
+        return food;
     }
 
-    public String getFoodName() {
-        return foodName;
+    public void setFood(Food food) {
+        this.food = food;
     }
 
-    public void setFoodName(String foodName) {
-        this.foodName = foodName;
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public int getQuantity() {
@@ -48,11 +60,11 @@ public class Order {
         this.quantity = quantity;
     }
 
-    public String getOption() {
-        return option;
+    public String getOrderOption() {
+        return orderOption;
     }
 
-    public void setOption(String option) {
-        this.option = option;
+    public void setOrderOption(String option) {
+        this.orderOption = option;
     }
 }
