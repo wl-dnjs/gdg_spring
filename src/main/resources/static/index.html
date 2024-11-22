@@ -10,11 +10,15 @@
 
 <h1>Welcome to the Food Order System</h1>
 
+<h2>Enter Your Name</h2>
+<input type="text" id="user-name-input" placeholder="Enter your name" />
+<button id="create-user-btn">Create User</button>
+
 <h2>Available Menu</h2>
 <ul>
-    <li>Pizza <button class="order-btn" data-name="Pizza">Order</button></li>
-    <li>Burger <button class="order-btn" data-name="Burger">Order</button></li>
-    <li>Pasta <button class="order-btn" data-name="Pasta">Order</button></li>
+    <li>Pizza <button class="order-btn" data-name="Pizza" data-id="1">Order</button></li>
+    <li>Burger <button class="order-btn" data-name="Burger" data-id="2">Order</button></li>
+    <li>Pasta <button class="order-btn" data-name="Pasta" data-id="3">Order</button></li>
 </ul>
 
 <h2>Your Orders</h2>
@@ -23,13 +27,36 @@
 </ul>
 
 <script>
+    // 사용자 생성 버튼 클릭 이벤트
+    $("#create-user-btn").click(function () {
+        const userName = $("#user-name-input").val().trim();
+
+        if (!userName) {
+            alert("Please enter your name.");
+            return;
+        }
+
+        $.ajax({
+            url: "/api/users", // 사용자 생성 API 엔드포인트
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ name: userName }), // 사용자 이름 데이터 전송
+            success: function (response) {
+                alert("User created successfully: ID = " + response.id + ", Name = " + response.name);
+                // 추가적으로 필요한 동작을 여기에 작성하세요.
+            },
+            error: function (xhr, status, error) {
+                alert("Failed to create user. Error: " + xhr.responseText);
+            },
+        });
+    });
+
     // 주문 목록 가져오기 (페이지 로드 시)
     $(document).ready(function() {
         $.ajax({
             url: "/api/orders",  // 주문 목록 조회 API
             type: "GET",
             success: function(response) {
-                // 서버에서 받은 주문 목록을 화면에 표시
                 response.forEach(order => {
                     addOrderToList(order);
                 });
@@ -53,7 +80,7 @@
 
     // 주문 추가 버튼 클릭 시
     $(".order-btn").click(function() {
-        const foodName = $(this).data("name");
+        const foodId = $(this).data("id");
         const quantity = prompt("How many?");
         const option = prompt("Any option? (e.g., Extra Cheese, No Onion)");
 
@@ -62,9 +89,9 @@
                 url: "/api/orders",  // 주문 추가 API
                 type: "POST",
                 contentType: "application/json",  // JSON 형식으로 데이터 전송
-                data: JSON.stringify({ foodName: foodName, quantity: quantity, option: option }),  // 주문 데이터
+                data: JSON.stringify({ foodId: foodId, quantity: quantity, orderOption: option || '' }),  // 변경된 주문 데이터
                 success: function(response) {
-                    alert("Order added: " + response.foodName);
+                    alert("Order added");
                     addOrderToList(response);  // 주문 목록에 추가
                 },
                 error: function(xhr, status, error) {
@@ -106,7 +133,7 @@
                 url: "/api/orders/" + orderId,  // 주문 수정 API
                 type: "PUT",
                 contentType: "application/json",
-                data: JSON.stringify({ option: newOption }),  // 변경된 옵션 데이터
+                data: JSON.stringify({ orderOption: newOption }),  // 변경된 옵션 데이터
                 success: function(response) {
                     alert("Option updated: " + response.foodName);
                     $(`#order-${orderId}`).find("span:nth-child(3)").text(response.option || 'No option');  // 옵션 업데이트

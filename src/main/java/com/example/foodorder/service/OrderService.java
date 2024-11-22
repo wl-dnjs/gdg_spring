@@ -1,46 +1,98 @@
 package com.example.foodorder.service;
 
-import com.example.foodorder.dto.OrderDTO;
+import com.example.foodorder.dto.OrderRequestDTO;
+import com.example.foodorder.dto.OrderResponseDTO;
 import com.example.foodorder.entity.Order;
+import com.example.foodorder.entity.Food;
+import com.example.foodorder.entity.User;
 import com.example.foodorder.repository.OrderRepository;
+import com.example.foodorder.repository.UserRepository;
+import com.example.foodorder.repository.FoodRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 public class OrderService {
     private final OrderRepository orderRepository;
+    private final FoodRepository foodRepository;
+    private final UserRepository userRepository;
 
-    // 생성자. orderRepository 필드 초기화
-    public OrderService(OrderRepository orderRepository) {
+    // 생성자 주입
+    public OrderService(OrderRepository orderRepository, FoodRepository foodRepository, UserRepository userRepository) {
         this.orderRepository = orderRepository;
+        this.foodRepository = foodRepository;
+        this.userRepository = userRepository;
+    }
+
+    // Food 조회
+    public Food findFoodById(Long foodId) {
+        return foodRepository.findById(foodId)
+                .orElseThrow(() -> new EntityNotFoundException("Not founded: " + foodId)); // 예외 처리
+    }
+
+    // User 조회
+    public User findUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Not founded: " + userId)); // 예외 처리
     }
 
     // 주문 추가
-    public OrderDTO addOrder(OrderDTO orderDTO) {
-        Order order = new Order(orderDTO.foodName(), orderDTO.quantity(), orderDTO.option()); // orderDTO 필드로 order 객체 생성
-        order = orderRepository.save(order); // save 메서드 사용해서 order 객체 데베에 저장하고 다시 order에 저장
-        return new OrderDTO(order.getId(), order.getFoodName(), order.getQuantity(), orderDTO.option()); // 데베 order에서 저장된 정보로 다시 orderDTO 객체 생성해서 반환
+    @Transactional
+    public OrderResponseDTO addOrder(OrderRequestDTO orderRequestDTO) {
+        Food food = findFoodById(orderRequestDTO.foodId());
+        User user = new User("New User");
+        user = userRepository.save(user);
+        Order order = new Order(food, user, orderRequestDTO.quantity(), orderRequestDTO.orderOption());
+        Order savedOrder = orderRepository.save(order);
+
+        return new OrderResponseDTO(
+                savedOrder.getId(),
+                savedOrder.getFood().getFoodName(),
+                savedOrder.getUser().getUserName(),
+                savedOrder.getQuantity(),
+                savedOrder.getOrderOption()
+        );
     }
 
     // 주문 조회
-    public List<OrderDTO> getAllOrders() { // OrderDTO 객체의 리스트 반환
-        return orderRepository.findAll().stream() // 모든 order 엔티티 리스트로 가져와서 스트림으로 변환
-                .map(order -> new OrderDTO(order.getId(), order.getFoodName(), order.getQuantity(), order.getOption())) // order 객체를 orderDTO 객체로 변환함
-                .toList(); // 변환된 orderDTO 객체를 리스트로 만들어 반환
+    public List<OrderResponseDTO> getAllOrders() {
+        return orderRepository.findAll().stream()
+                .map(order -> new OrderResponseDTO(
+                        order.getId(),
+                        order.getFood().getFoodName(),
+                        order.getUser().getUserName(),
+                        order.getQuantity(),
+                        order.getOrderOption()))
+                .toList();
     }
 
     // 주문 변경
-    public OrderDTO updateOrder(Long id, OrderDTO orderDTO) {
-        Order order = orderRepository.findById(id).orElseThrow(); // id로 order 객체 조회. 해당 id 없으면 예외 발생
-        if (orderDTO.quantity() > 0) { // 입력한 수량이 0보다 크면 변경
-            order.setQuantity(orderDTO.quantity());
+    @Transactional
+    public OrderResponseDTO updateOrder(Long id, OrderRequestDTO orderRequestDTO) {
+        Order order = orderRepository.findById(id).orElseThrow();
+        if (orderRequestDTO.foodId() != null) {
+            order.setFood(findFoodById(orderRequestDTO.foodId()));
         }
-        if (orderDTO.option() != null) { // 입력한 옵션이 null이 아니면 변경
-            order.setOption(orderDTO.option());
+        if (orderRequestDTO.userId() != null) {
+            order.setUser(findUserById(orderRequestDTO.userId()));
         }
-        order = orderRepository.save(order); // 변경된 order 객체 데베에 저장
-        return new OrderDTO(order.getId(), order.getFoodName(), order.getQuantity(), order.getOption()); //데베 order에서 저장된 정보로 다시 orderDTO 객체 생성해서 반환
+        if (orderRequestDTO.quantity() > 0) {
+            order.setQuantity(orderRequestDTO.quantity());
+        }
+        if (orderRequestDTO.orderOption() != null) {
+            order.setOrderOption(orderRequestDTO.orderOption());
+        }
+        Order updatedOrder = orderRepository.save(order);
+
+        return new OrderResponseDTO(
+                updatedOrder.getId(),
+                updatedOrder.getFood().getFoodName(),
+                updatedOrder.getUser().getUserName(),
+                updatedOrder.getQuantity(),
+                updatedOrder.getOrderOption());
     }
 
     // 주문 취소
