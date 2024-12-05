@@ -2,11 +2,12 @@ package com.example.foodorder.entity;
 
 import jakarta.persistence.*;
 
+// JPA를 통해 데베와 연동하기 위한 클래스
 @Entity
-@Table(name = "orders")
+@Table(name = "orders") // 연결될 테이블 이름 지정
 public class Order {
     @Id // 기본키
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // DB에서 자동으로 아이디 생성
     private Long id;
 
     @ManyToOne(optional = false) // 하나의 음식과 연결됨
