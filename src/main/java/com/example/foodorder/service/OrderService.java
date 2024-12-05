@@ -41,10 +41,8 @@ public class OrderService {
 
     // 주문 추가
     @Transactional
-    public OrderResponseDTO addOrder(OrderRequestDTO orderRequestDTO) {
+    public OrderResponseDTO addOrder(OrderRequestDTO orderRequestDTO, User user) {
         Food food = findFoodById(orderRequestDTO.foodId());
-        User user = new User("New User");
-        user = userRepository.save(user);
         Order order = new Order(food, user, orderRequestDTO.quantity(), orderRequestDTO.orderOption());
         Order savedOrder = orderRepository.save(order);
 
@@ -98,5 +96,9 @@ public class OrderService {
     // 주문 취소
     public void cancelOrder(Long id) {
         orderRepository.deleteById(id);
+    }
+
+    public List<Order> getOrdersByUser(User user) {
+        return orderRepository.findByUser(user);
     }
 }
